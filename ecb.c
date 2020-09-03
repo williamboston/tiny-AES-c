@@ -36,7 +36,7 @@ static void run_ECB_loop()
     char buf[CHUNK];
     FILE *file;
     size_t nread;
-    file = fopen("1gb.txt", "r");
+    file = fopen("1gb_lorem.txt", "r");
 
     //decryption loop
     if (file) {
