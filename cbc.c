@@ -34,7 +34,7 @@ static void run_CBC_loop() {
     char buf[CHUNK];
     FILE *file;
     size_t nread;
-    file = fopen("128mb.txt", "r");
+    file = fopen("4gb.txt", "r");
 
     //decryption loop
     if (file) {
