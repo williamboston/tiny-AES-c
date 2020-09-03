@@ -1,18 +1,9 @@
-#CC           = avr-gcc
-#CFLAGS       = -Wall -mmcu=atmega16 -Os -Wl,-Map,test.map
-#OBJCOPY      = avr-objcopy
 CC           = gcc
 LD           = gcc
 AR           = ar
 ARFLAGS      = rcs
-CFLAGS       = -Wall -Os -c
-LDFLAGS      = -Wall -Os -Wl,-Map,test.map
-ifdef AES192
-CFLAGS += -DAES192=1
-endif
-ifdef AES256
-CFLAGS += -DAES256=1
-endif
+CFLAGS       = -Os -c
+LDFLAGS      = -Os -Wl,-Map,test.map
 
 OBJCOPYFLAGS = -j .text -O ihex
 OBJCOPY      = objcopy
@@ -20,9 +11,9 @@ OBJCOPY      = objcopy
 # include path to AVR library
 INCLUDE_PATH = /usr/lib/avr/include
 # splint static check
-SPLINT       = splint test.c aes.c -I$(INCLUDE_PATH) +charindex -unrecog
+SPLINT       = splint test.c ecb.c cbc.c ctr.c aes.c -I$(INCLUDE_PATH) +charindex -unrecog
 
-default: test.elf
+default: test.elf ecb.elf cbc.elf ctr.elf
 
 .SILENT:
 .PHONY:  lint clean
@@ -35,11 +26,47 @@ test.o : test.c aes.h aes.o
 	echo [CC] $@ $(CFLAGS)
 	$(CC) $(CFLAGS) -o  $@ $<
 
+ecb.hex : ecb.elf
+	echo copy object-code to new image and format in hex
+	$(OBJCOPY) ${OBJCOPYFLAGS} $< $@
+
+ecb.o : ecb.c aes.h aes.o
+	echo [CC] $@ $(CFLAGS)
+	$(CC) $(CFLAGS) -o  $@ $<
+
+cbc.hex : cbc.elf
+	echo copy object-code to new image and format in hex
+	$(OBJCOPY) ${OBJCOPYFLAGS} $< $@
+
+cbc.o : cbc.c aes.h aes.o
+	echo [CC] $@ $(CFLAGS)
+	$(CC) $(CFLAGS) -o  $@ $<
+
+ctr.hex : ctr.elf
+	echo copy object-code to new image and format in hex
+	$(OBJCOPY) ${OBJCOPYFLAGS} $< $@
+
+ctr.o : ctr.c aes.h aes.o
+	echo [CC] $@ $(CFLAGS)
+	$(CC) $(CFLAGS) -o  $@ $<
+
 aes.o : aes.c aes.h
 	echo [CC] $@ $(CFLAGS)
 	$(CC) $(CFLAGS) -o $@ $<
 
 test.elf : aes.o test.o
+	echo [LD] $@
+	$(LD) $(LDFLAGS) -o $@ $^
+
+ecb.elf : aes.o ecb.o
+	echo [LD] $@
+	$(LD) $(LDFLAGS) -o $@ $^
+
+cbc.elf : aes.o cbc.o
+	echo [LD] $@
+	$(LD) $(LDFLAGS) -o $@ $^
+
+ctr.elf : aes.o ctr.o
 	echo [LD] $@
 	$(LD) $(LDFLAGS) -o $@ $^
 
@@ -54,8 +81,6 @@ clean:
 
 test:
 	make clean && make && ./test.elf
-	make clean && make AES192=1 && ./test.elf
-	make clean && make AES256=1 && ./test.elf
 
 lint:
 	$(call SPLINT)
