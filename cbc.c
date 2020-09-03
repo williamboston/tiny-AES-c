@@ -30,17 +30,20 @@ int main(void)
 
 static void run_CBC_loop() 
 {
-    #define CHUNK 1024 /* read 384 bytes at a time - this is 16*24 - as in, 16bytes times the max number of cores at 24*/
+    #define CHUNK 384 /* read 384 bytes at a time - this is 16*24 - as in, 16bytes times the max number of cores at 24*/
     char buf[CHUNK];
     FILE *file;
     size_t nread;
-    file = fopen("10gb_lorem.txt", "r");
+    file = fopen("1gb.txt", "r");
 
     //decryption loop
     if (file) {
+        //read the whole buffer (384 bytes)
         while ((nread = fread(buf, 1, sizeof buf, file)) > 0) {
-            //run decryption algorithm
-            decrypt_cbc((uint8_t)atoi(buf));
+            //run decryption algorithm on each 16 byte (128bit) section at a time
+            for (int i=0; i<384; i+=16) {
+                decrypt_cbc((uint8_t)buf[i]);
+            }
         }
         if (ferror(file)) {
             printf("File Reading Error...");

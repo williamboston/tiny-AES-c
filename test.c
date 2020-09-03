@@ -41,7 +41,7 @@ int main(void)
     // //ecb
     // test_decrypt_ecb();
     // test_encrypt_ecb();
-    // test_encrypt_ecb_verbose();
+    test_encrypt_ecb_verbose();
 
     //my code - this can be it's own func
     // #define CHUNK 384 /* read 384 bytes at a time - this is 16*24 - as in, 16bytes times the max number of cores at 24*/

@@ -6,6 +6,7 @@
 
 static int decrypt_ecb(uint8_t buf);
 static void run_ECB_loop();
+char* ReadFile(char *filename);
 
 
 int main(void)
@@ -31,17 +32,20 @@ int main(void)
 
 static void run_ECB_loop() 
 {
-    #define CHUNK 1024 /* read 384 bytes at a time - this is 16*24 - as in, 16bytes times the max number of cores at 24*/
+    #define CHUNK 384 /* read 384 bytes at a time - this is 16*24 - as in, 16bytes (128 bits) times the max number of cores 24*/
     char buf[CHUNK];
     FILE *file;
     size_t nread;
-    file = fopen("10gb_lorem.txt", "r");
+    file = fopen("1gb.txt", "r");
 
     //decryption loop
     if (file) {
+        //read the whole buffer (384 bytes)
         while ((nread = fread(buf, 1, sizeof buf, file)) > 0) {
-            //run decryption algorithm
-            decrypt_ecb((uint8_t)atoi(buf));
+            //run decryption algorithm on each 16 byte (128bit) section at a time
+            for (int i=0; i<384; i+=16) {
+                decrypt_ecb((uint8_t)buf[i]);
+            }
         }
         if (ferror(file)) {
             printf("File Reading Error...");
@@ -63,3 +67,43 @@ static int decrypt_ecb(uint8_t buf)
 
     return 1;
 }
+
+// char* ReadFile(char *filename)
+// {
+//    char *buffer = NULL;
+//    int string_size, read_size;
+//    FILE *handler = fopen(filename, "r");
+
+//    if (handler)
+//    {
+//        // Seek the last byte of the file
+//        fseek(handler, 0, SEEK_END);
+//        // Offset from the first to the last byte, or in other words, filesize
+//        string_size = ftell(handler);
+//        // go back to the start of the file
+//        rewind(handler);
+
+//        // Allocate a string that can hold it all
+//        buffer = (char*) malloc(sizeof(char) * (string_size + 1) );
+
+//        // Read it all in one operation
+//        read_size = fread(buffer, sizeof(char), string_size, handler);
+
+//        // fread doesn't set it so put a \0 in the last position
+//        // and buffer is now officially a string
+//        buffer[string_size] = '\0';
+
+//        if (string_size != read_size)
+//        {
+//            // Something went wrong, throw away the memory and set
+//            // the buffer to NULL
+//            free(buffer);
+//            buffer = NULL;
+//        }
+
+//        // Always remember to close the file.
+//        fclose(handler);
+//     }
+
+//     return buffer;
+// }
