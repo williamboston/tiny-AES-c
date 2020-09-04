@@ -6,11 +6,14 @@
 
 static void run_CBC_loop();
 static int decrypt_cbc(uint8_t buf);
+static void write_CBC_output(double time);
+
 
 int main(void)
 {
-    printf("\nTesting AES128 in CBC Mode\n");
+    printf("\nTesting AES128 in CBC Mode...\n");
 
+    //timestamp start
     struct timeval *start = malloc(sizeof(struct timeval));
     struct timeval *stop = malloc(sizeof(struct timeval));
     double secs = 0;
@@ -22,8 +25,9 @@ int main(void)
     //timestamp end
     gettimeofday(stop, NULL);
     secs = (double)(stop->tv_usec - start->tv_usec) / 1000000 + (double)(stop->tv_sec - start->tv_sec);
-    //later this should be an output to csv maybe?
-    printf("CBC Time Taken: %f seconds\n",secs);
+
+    //write run time to file
+    write_CBC_output(secs);
 
     return 0;
 }
@@ -34,7 +38,7 @@ static void run_CBC_loop()
     char buf[CHUNK];
     FILE *file;
     size_t nread;
-    file = fopen("1gb_lorem.txt", "r");
+    file = fopen("512mb_lorem.txt", "r");
 
     //decryption loop
     if (file) {
@@ -65,4 +69,15 @@ static int decrypt_cbc(uint8_t buf)
     AES_CBC_decrypt_buffer(&ctx, &buf, 64);
 
     return 1;
+}
+
+// appends test output to out.txt for storage/analysis
+static void write_CBC_output(double time)
+{
+    FILE * out;
+    out = fopen("out.txt", "a");
+    fprintf(out, "CBC Time Taken: ");
+    fprintf(out, "%f seconds\n\n", time);
+    fclose(out);
+    printf("\nCBC Done! Result saved to out.txt\n\n");
 }
