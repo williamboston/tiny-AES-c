@@ -1,2 +1,2 @@
 #!/bin/sh
-./ecb.elf;./cbc.elf;./ctr.elf
+./ecb.elf 2;./cbc.elf 2;./ctr.elf 2

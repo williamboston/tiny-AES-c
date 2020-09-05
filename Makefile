@@ -2,8 +2,8 @@ CC           = gcc
 LD           = gcc
 AR           = ar
 ARFLAGS      = rcs
-CFLAGS       = -Os -c
-LDFLAGS      = -Os -Wl,-Map,test.map
+CFLAGS       = -Os -c -fopenmp
+LDFLAGS      = -Os -fopenmp -Wl,-Map,test.map
 
 OBJCOPYFLAGS = -j .text -O ihex
 OBJCOPY      = objcopy

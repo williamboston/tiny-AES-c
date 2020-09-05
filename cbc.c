@@ -2,14 +2,15 @@
 #include <string.h>
 #include <sys/time.h>
 #include <stdlib.h>
+#include <omp.h>
 #include "aes.h"
 
-static void run_CBC_loop();
+static void run_CBC_loop(int p_count);
 static int decrypt_cbc(uint8_t buf);
-static void write_CBC_output(double time);
+static void write_CBC_output(double time, int p_count);
 
 
-int main(void)
+int main(int argc, char* argv[])
 {
     printf("\nTesting AES128 in CBC Mode...\n");
 
@@ -19,20 +20,23 @@ int main(void)
     double secs = 0;
     gettimeofday(start, NULL);
 
+    //get process count
+    int p_count = atoi(argv[1]);
+
     //executes decryption I/O loop
-    run_CBC_loop();
+    run_CBC_loop(p_count);
 
     //timestamp end
     gettimeofday(stop, NULL);
     secs = (double)(stop->tv_usec - start->tv_usec) / 1000000 + (double)(stop->tv_sec - start->tv_sec);
 
     //write run time to file
-    write_CBC_output(secs);
+    write_CBC_output(secs, p_count);
 
     return 0;
 }
 
-static void run_CBC_loop() 
+static void run_CBC_loop(int p_count) 
 {
     #define CHUNK 384 /* read 384 bytes at a time - this is 16*24 - as in, 16bytes times the max number of cores at 24*/
     char buf[CHUNK];
@@ -45,6 +49,7 @@ static void run_CBC_loop()
         //read the whole buffer (384 bytes)
         while ((nread = fread(buf, 1, sizeof buf, file)) > 0) {
             //run decryption algorithm on each 16 byte (128bit) section at a time
+            #pragma omp parallel for num_threads(p_count)
             for (int i=0; i<384; i+=16) {
                 decrypt_cbc((uint8_t)buf[i]);
             }
@@ -72,11 +77,11 @@ static int decrypt_cbc(uint8_t buf)
 }
 
 // appends test output to out.txt for storage/analysis
-static void write_CBC_output(double time)
+static void write_CBC_output(double time, int p_count)
 {
     FILE * out;
     out = fopen("out.txt", "a");
-    fprintf(out, "CBC Time Taken: ");
+    fprintf(out, "CBC: %d THREAD: ", p_count);
     fprintf(out, "%f seconds\n\n", time);
     fclose(out);
     printf("\nCBC Done! Result saved to out.txt\n\n");
