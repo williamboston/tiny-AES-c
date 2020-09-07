@@ -91,5 +91,5 @@ static void write_CBC_output(double time, int p_count)
     fprintf(out, "CBC: %d THREAD: ", p_count);
     fprintf(out, "%f seconds\n\n", time);
     fclose(out);
-    printf("CBC Done! Result saved to out.txt\n\n");
+    printf("CBC Done! Result saved to out.txt\n");
 }

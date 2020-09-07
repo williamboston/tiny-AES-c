@@ -91,5 +91,5 @@ static void write_ECB_output(double time, int p_count)
     fprintf(out, "ECB: %d THREAD: ", p_count);
     fprintf(out, "%f seconds\n\n", time);
     fclose(out);
-    printf("ECB Done! Result saved to out.txt\n\n");
+    printf("ECB Done! Result saved to out.txt\n");
 }

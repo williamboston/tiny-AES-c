@@ -1,12 +1,7 @@
-ECB: 4 THREAD: 47.120973 seconds
+ECB: 1 THREAD: 100.566714 seconds
 
-CBC: 4 THREAD: 56.202858 seconds
+CBC: 1 THREAD: 101.278038 seconds
 
-CTR: 4 THREAD: 35.746575 seconds
-
-ECB: 4 THREAD: 52.043631 seconds
-
-CBC: 4 THREAD: 52.829616 seconds
-
-CTR: 4 THREAD: 29.285921 seconds
+CTR: 1 THREAD: 50.445981 seconds
+#######################
 
