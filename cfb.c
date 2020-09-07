@@ -5,13 +5,14 @@
 #include <omp.h>
 #include "aes.h"
 
-static void run_CTR_loop();
-static int decrypt_ctr(uint8_t *buf);
-static void write_CTR_output(double time, int p_count);
+static void run_CFB_loop(int p_count);
+static int decrypt_cfb(uint8_t *buf);
+static void write_CFB_output(double time, int p_count);
+
 
 int main(int argc, char* argv[])
 {
-    printf("\nTesting AES128 in CTR Mode...\n");
+    printf("\nTesting AES128 in CFB Mode...\n");
 
     //timestamp start
     struct timeval *start = malloc(sizeof(struct timeval));
@@ -23,19 +24,19 @@ int main(int argc, char* argv[])
     int p_count = atoi(argv[1]);
 
     //executes decryption I/O loop
-    run_CTR_loop(p_count);
+    run_CFB_loop(p_count);
 
     //timestamp end
     gettimeofday(stop, NULL);
     secs = (double)(stop->tv_usec - start->tv_usec) / 1000000 + (double)(stop->tv_sec - start->tv_sec);
-    
+
     //write run time to file
-    write_CTR_output(secs, p_count);
+    write_CFB_output(secs, p_count);
 
     return 0;
 }
 
-static void run_CTR_loop(int p_count) 
+static void run_CFB_loop(int p_count) 
 {
     #define CHUNK 384 /* read 384 bytes at a time - this is 16*24 - as in, 16bytes times the max number of cores at 24*/
     char buf[CHUNK];
@@ -57,7 +58,7 @@ static void run_CTR_loop(int p_count)
                 {
                     minor_buf[j] = buf[i+j];
                 }
-                decrypt_ctr(minor_buf);
+                decrypt_cfb(minor_buf);
             }
         }
         if (ferror(file)) {
@@ -67,7 +68,7 @@ static void run_CTR_loop(int p_count)
     }
 }
 
-static int decrypt_ctr(uint8_t *buf)
+static int decrypt_cfb(uint8_t *buf)
 {
     //init key & init vector
     uint8_t key[] = { 0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6, 0xab, 0xf7, 0x15, 0x88, 0x09, 0xcf, 0x4f, 0x3c };
@@ -75,21 +76,20 @@ static int decrypt_ctr(uint8_t *buf)
     //init aes struct
     struct AES_ctx ctx;
     
-    //Run CTR on AES Instance
+    //Run CFB on AES instance
     AES_init_ctx_iv(&ctx, key, iv);
-    AES_CTR_xcrypt_buffer(&ctx, buf, 16);
+    AES_CFB_decrypt_buffer(&ctx, buf, 16);
 
     return 1;
 }
 
 // appends test output to out.txt for storage/analysis
-static void write_CTR_output(double time, int p_count)
+static void write_CFB_output(double time, int p_count)
 {
     FILE * out;
     out = fopen("out.txt", "a");
-    fprintf(out, "CTR: %d THREAD: ", p_count);
+    fprintf(out, "CFB: %d THREAD: ", p_count);
     fprintf(out, "%f seconds\n\n", time);
-    fprintf(out, "######## %d THREAD RUN COMPLETE #######\n\n", p_count);
     fclose(out);
-    printf("CTR Done! Result saved to out.txt\n\n");
+    printf("CFB Done! Result saved to out.txt\n");
 }

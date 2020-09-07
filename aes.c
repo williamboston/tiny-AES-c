@@ -522,7 +522,20 @@ void AES_CBC_decrypt_buffer(struct AES_ctx* ctx, uint8_t* buf,  uint32_t length)
     memcpy(ctx->Iv, storeNextIv, AES_BLOCKLEN);
     buf += AES_BLOCKLEN;
   }
+}
 
+void AES_CFB_decrypt_buffer(struct AES_ctx* ctx, uint8_t* buf,  uint32_t length)
+{
+  uintptr_t i;
+  uint8_t storeNextIv[AES_BLOCKLEN];
+  for (i = 0; i < length; i += AES_BLOCKLEN)
+  {
+    memcpy(storeNextIv, buf, AES_BLOCKLEN);
+    Cipher((state_t*)ctx->Iv, ctx->RoundKey);
+    XorWithIv(buf, ctx->Iv);
+    memcpy(ctx->Iv, storeNextIv, AES_BLOCKLEN);
+    buf += AES_BLOCKLEN;
+  }
 }
 
 #endif // #if defined(CBC) && (CBC == 1)
