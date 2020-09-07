@@ -1,5 +1,6 @@
 #!/bin/sh
-./ecb.elf 4;
-./cbc.elf 4;
-./cfb.elf 4;
-./ctr.elf 4
+THREADS=$((4))
+./ecb.elf $THREADS;
+./cbc.elf $THREADS;
+./cfb.elf $THREADS;
+./ctr.elf $THREADS
