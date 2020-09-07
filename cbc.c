@@ -6,7 +6,7 @@
 #include "aes.h"
 
 static void run_CBC_loop(int p_count);
-static int decrypt_cbc(uint8_t buf);
+static int decrypt_cbc(uint8_t *buf);
 static void write_CBC_output(double time, int p_count);
 
 
@@ -42,7 +42,8 @@ static void run_CBC_loop(int p_count)
     char buf[CHUNK];
     FILE *file;
     size_t nread;
-    file = fopen("512mb_lorem.txt", "r");
+    char file_name[] = "1gb_lorem.txt";
+    file = fopen(file_name, "r");
 
     //decryption loop
     if (file) {
@@ -51,7 +52,13 @@ static void run_CBC_loop(int p_count)
             //run decryption algorithm on each 16 byte (128bit) section at a time
             #pragma omp parallel for num_threads(p_count)
             for (int i=0; i<384; i+=16) {
-                decrypt_cbc((uint8_t)buf[i]);
+                //create temporary buffer to send to decryption
+                uint8_t minor_buf[16];
+                for (int j=0; j<16; j++) 
+                {
+                    minor_buf[j] = buf[i+j];
+                }
+                decrypt_cbc(minor_buf);
             }
         }
         if (ferror(file)) {
@@ -61,7 +68,7 @@ static void run_CBC_loop(int p_count)
     }
 }
 
-static int decrypt_cbc(uint8_t buf)
+static int decrypt_cbc(uint8_t *buf)
 {
     //init key & init vector
     uint8_t key[] = { 0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6, 0xab, 0xf7, 0x15, 0x88, 0x09, 0xcf, 0x4f, 0x3c };
@@ -71,7 +78,7 @@ static int decrypt_cbc(uint8_t buf)
     
     //Run CBC on AES instance
     AES_init_ctx_iv(&ctx, key, iv);
-    AES_CBC_decrypt_buffer(&ctx, &buf, 64);
+    AES_CBC_decrypt_buffer(&ctx, buf, 16);
 
     return 1;
 }
@@ -84,5 +91,5 @@ static void write_CBC_output(double time, int p_count)
     fprintf(out, "CBC: %d THREAD: ", p_count);
     fprintf(out, "%f seconds\n\n", time);
     fclose(out);
-    printf("\nCBC Done! Result saved to out.txt\n\n");
+    printf("CBC Done! Result saved to out.txt\n\n");
 }

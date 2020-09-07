@@ -40,8 +40,8 @@ int main(void)
 
     // //ecb
     // test_decrypt_ecb();
-    // test_encrypt_ecb();
-    test_encrypt_ecb_verbose();
+    test_encrypt_ecb();
+    //test_encrypt_ecb_verbose();
 
     //my code - this can be it's own func
     // #define CHUNK 384 /* read 384 bytes at a time - this is 16*24 - as in, 16bytes times the max number of cores at 24*/
@@ -150,17 +150,30 @@ static int test_encrypt_ecb(void)
     uint8_t in[]  = { 0x6b, 0xc1, 0xbe, 0xe2, 0x2e, 0x40, 0x9f, 0x96, 0xe9, 0x3d, 0x7e, 0x11, 0x73, 0x93, 0x17, 0x2a };
     struct AES_ctx ctx;
 
+        for (int i=0; i<16; i++) {
+        printf("%d\n", in[i]);
+        printf("%d\n", out[i]);
+    }
+
     AES_init_ctx(&ctx, key);
     AES_ECB_encrypt(&ctx, in);
 
-    printf("ECB encrypt: ");
+    printf("\nECB encrypt: ");
 
-    if (0 == memcmp((char*) out, (char*) in, 16)) {
+    for (int i=0; i<16; i++) {
+        printf("%d\n", in[i]);
+        printf("%d\n", out[i]);
+    }
+
+    if (0 == memcmp((char*) out, (char*) in, 16)) 
+    {
         printf("SUCCESS!\n");
-	return(0);
-    } else {
+	    return(0);
+    } 
+    else 
+    {
         printf("FAILURE!\n");
-	return(1);
+	    return(1);
     }
 }
 

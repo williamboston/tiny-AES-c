@@ -5,7 +5,7 @@
 #include <omp.h>
 #include "aes.h"
 
-static int decrypt_ecb(uint8_t buf);
+static int decrypt_ecb(uint8_t *buf);
 static void run_ECB_loop(int p_count);
 static void write_ECB_output(double time, int p_count);
 
@@ -33,8 +33,6 @@ int main(int argc, char* argv[])
     //write run time to file
     write_ECB_output(secs, p_count);
 
-    //printf("ECB Time Taken: %f seconds\n",secs);
-
     return 0;
 }
 
@@ -44,7 +42,8 @@ static void run_ECB_loop(int p_count)
     char buf[CHUNK];
     FILE *file;
     size_t nread;
-    file = fopen("512mb_lorem.txt", "r");
+    char file_name[] = "1gb_lorem.txt";
+    file = fopen(file_name, "r");
 
     //decryption loop
     if (file) {
@@ -53,7 +52,14 @@ static void run_ECB_loop(int p_count)
             //run decryption algorithm on each 16 byte (128bit) section at a time
             #pragma omp parallel for num_threads(p_count)
             for (int i=0; i<384; i+=16) {
-                decrypt_ecb((uint8_t)buf[i]);
+                //create temporary buffer to send to decryption
+                uint8_t minor_buf[16];
+                for (int j=0; j<16; j++) 
+                {
+                    minor_buf[j] = buf[i+j];
+                }
+                //send to decryption function
+                decrypt_ecb(minor_buf);
             }
         }
         if (ferror(file)) {
@@ -63,16 +69,16 @@ static void run_ECB_loop(int p_count)
     }
 }
 
-static int decrypt_ecb(uint8_t buf)
+static int decrypt_ecb(uint8_t *buf)
 {
     //init key
     uint8_t key[] = { 0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6, 0xab, 0xf7, 0x15, 0x88, 0x09, 0xcf, 0x4f, 0x3c };
     //init aes struct
     struct AES_ctx ctx;
-    
+
     //run ECB on AES instance
     AES_init_ctx(&ctx, key);
-    AES_ECB_decrypt(&ctx, &buf);
+    AES_ECB_decrypt(&ctx, buf);
 
     return 1;
 }
@@ -85,5 +91,5 @@ static void write_ECB_output(double time, int p_count)
     fprintf(out, "ECB: %d THREAD: ", p_count);
     fprintf(out, "%f seconds\n\n", time);
     fclose(out);
-    printf("\nECB Done! Result saved to out.txt\n\n");
+    printf("ECB Done! Result saved to out.txt\n\n");
 }
