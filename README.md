@@ -16,12 +16,13 @@ make
 sh run.sh
 ```
 
-* Requires large .txt file as file input - this implementation uses a variety of large (512mb, 1gb, 2gb) 'lorem ipsum' text files as dummy input to measure performance - none are included in this repository. See this [link](https://www.windows-commandline.com/how-to-create-large-dummy-file/) for information on how to create these files if required (windows only)
-* Thread count is declared in run.sh
+* Requires large .txt file as file input - this implementation uses a variety of large (512mb, 1gb, 2gb) 'lorem ipsum' text files as dummy input to measure performance - none are included in this repository. See this [link](https://www.windows-commandline.com/how-to-create-large-dummy-file/) for information on how to create these files if required (Windows only)
+* Thread count is given as a single argument for each mode of operation in run.sh - edit as necessary
 * Results are saved in 'out.txt'
 
-An additional file in included used to verify the results of each mode. Takes number of threads as single argument. Simply run:
+### Verification:
+An additional file is included - used to verify the results of each mode of decryption. Takes number of threads as single argument. Simply run:
 ```
 ./verify.elf 4
 ```
-This will run through each mode of operation both sequentially and then in parallel to confirm each buffer is correctly encrypted, notably this means the buffers remain encrypted in order through parallel operation, so these files can safely be reversed by the inverse decrypt/encrypt operation.
+This will run through each mode of operation both sequentially and then in parallel to confirm each buffer is correctly encrypted - notably this means the buffers remain encrypted in order through parallel operation, so these files can safely be reversed by the inverse decrypt/encrypt operation.
