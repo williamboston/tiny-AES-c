@@ -11,9 +11,9 @@ OBJCOPY      = objcopy
 # include path to AVR library
 INCLUDE_PATH = /usr/lib/avr/include
 # splint static check
-SPLINT       = splint test.c ecb.c cbc.c ctr.c cfb.c aes.c -I$(INCLUDE_PATH) +charindex -unrecog
+SPLINT       = splint test.c ecb.c cbc.c ctr.c cfb.c verify.c aes.c -I$(INCLUDE_PATH) +charindex -unrecog
 
-default: test.elf ecb.elf cbc.elf ctr.elf cfb.elf
+default: test.elf ecb.elf cbc.elf ctr.elf cfb.elf verify.elf
 
 .SILENT:
 .PHONY:  lint clean
@@ -58,6 +58,14 @@ cfb.o : cfb.c aes.h aes.o
 	echo [CC] $@ $(CFLAGS)
 	$(CC) $(CFLAGS) -o  $@ $<
 
+verify.hex : verify.elf
+	echo copy object-code to new image and format in hex
+	$(OBJCOPY) ${OBJCOPYFLAGS} $< $@
+
+verify.o : verify.c aes.h aes.o
+	echo [CC] $@ $(CFLAGS)
+	$(CC) $(CFLAGS) -o  $@ $<
+
 aes.o : aes.c aes.h
 	echo [CC] $@ $(CFLAGS)
 	$(CC) $(CFLAGS) -o $@ $<
@@ -79,6 +87,10 @@ ctr.elf : aes.o ctr.o
 	$(LD) $(LDFLAGS) -o $@ $^
 
 cfb.elf : aes.o cfb.o
+	echo [LD] $@
+	$(LD) $(LDFLAGS) -o $@ $^
+
+verify.elf : aes.o verify.o
 	echo [LD] $@
 	$(LD) $(LDFLAGS) -o $@ $^
 

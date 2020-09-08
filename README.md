@@ -18,4 +18,4 @@ sh run.sh
 
 * Requires large .txt file as file input - this implementation uses a variety of large (512mb, 1gb, 2gb) 'lorem ipsum' text files as dummy input to measure performance - none are included in this repository. See this [link](https://www.windows-commandline.com/how-to-create-large-dummy-file/) for information on how to create these files if required (windows only)
 * Thread count is declared in run.sh
-* Results are saved in 'output.txt'
+* Results are saved in 'out.txt'
