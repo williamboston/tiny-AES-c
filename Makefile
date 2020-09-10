@@ -2,7 +2,7 @@ CC           = gcc
 LD           = gcc
 AR           = ar
 ARFLAGS      = rcs
-CFLAGS       = -Os -c -fopenmp
+CFLAGS       = -Os -std=gnu99 -c -fopenmp
 LDFLAGS      = -Os -fopenmp -Wl,-Map,test.map
 
 OBJCOPYFLAGS = -j .text -O ihex
@@ -11,20 +11,12 @@ OBJCOPY      = objcopy
 # include path to AVR library
 INCLUDE_PATH = /usr/lib/avr/include
 # splint static check
-SPLINT       = splint test.c ecb.c cbc.c ctr.c cfb.c verify.c aes.c -I$(INCLUDE_PATH) +charindex -unrecog
+SPLINT       = splint ecb.c cbc.c ctr.c cfb.c verify.c aes.c -I$(INCLUDE_PATH) +charindex -unrecog
 
-default: test.elf ecb.elf cbc.elf ctr.elf cfb.elf verify.elf
+default: ecb.elf cbc.elf ctr.elf cfb.elf verify.elf
 
 .SILENT:
 .PHONY:  lint clean
-
-test.hex : test.elf
-	echo copy object-code to new image and format in hex
-	$(OBJCOPY) ${OBJCOPYFLAGS} $< $@
-
-test.o : test.c aes.h aes.o
-	echo [CC] $@ $(CFLAGS)
-	$(CC) $(CFLAGS) -o  $@ $<
 
 ecb.hex : ecb.elf
 	echo copy object-code to new image and format in hex
@@ -70,10 +62,6 @@ aes.o : aes.c aes.h
 	echo [CC] $@ $(CFLAGS)
 	$(CC) $(CFLAGS) -o $@ $<
 
-test.elf : aes.o test.o
-	echo [LD] $@
-	$(LD) $(LDFLAGS) -o $@ $^
-
 ecb.elf : aes.o ecb.o
 	echo [LD] $@
 	$(LD) $(LDFLAGS) -o $@ $^
@@ -102,9 +90,6 @@ lib : aes.a
 
 clean:
 	rm -f *.OBJ *.LST *.o *.gch *.out *.hex *.map *.elf *.a
-
-test:
-	make clean && make && ./test.elf
 
 lint:
 	$(call SPLINT)

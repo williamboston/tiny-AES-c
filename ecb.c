@@ -38,7 +38,8 @@ int main(int argc, char* argv[])
 
 static void run_ECB_loop(int p_count) 
 {
-    #define CHUNK 384 /* read 384 bytes at a time - this is 16*24 - as in, 16bytes (128 bits) times the max number of cores 24*/
+    //1572864
+    #define CHUNK 1572864 /* read 384 bytes at a time - this is 16*24 - as in, 16bytes (128 bits) times the max number of cores 24*/
     char buf[CHUNK];
     FILE *file;
     size_t nread;
@@ -51,7 +52,7 @@ static void run_ECB_loop(int p_count)
         while ((nread = fread(buf, 1, sizeof buf, file)) > 0) {
             //run decryption algorithm on each 16 byte (128bit) section at a time
             #pragma omp parallel for num_threads(p_count)
-            for (int i=0; i<384; i+=16) {
+            for (int i=0; i<1572864; i+=16) {
                 //create temporary buffer to send to decryption
                 uint8_t minor_buf[16];
                 for (int j=0; j<16; j++) 

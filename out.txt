@@ -1,0 +1,75 @@
+ECB: 1 THREAD: 99.004621 seconds
+
+CBC: 1 THREAD: 99.528553 seconds
+
+CFB: 1 THREAD: 52.039377 seconds
+
+CTR: 1 THREAD: 50.681265 seconds
+
+######## 1 THREAD RUN COMPLETE #######
+
+ECB: 2 THREAD: 62.943523 seconds
+
+CBC: 2 THREAD: 65.248605 seconds
+
+CFB: 2 THREAD: 34.183226 seconds
+
+CTR: 2 THREAD: 33.338415 seconds
+
+######## 2 THREAD RUN COMPLETE #######
+
+ECB: 4 THREAD: 67.175725 seconds
+
+CBC: 4 THREAD: 67.894219 seconds
+
+CFB: 4 THREAD: 37.152609 seconds
+
+CTR: 4 THREAD: 37.545108 seconds
+
+######## 4 THREAD RUN COMPLETE #######
+
+ECB: 2 THREAD: 50.305093 seconds
+
+ECB: 2 THREAD: 55.114609 seconds
+
+ECB: 2 THREAD: 50.588035 seconds
+
+ECB: 2 THREAD: 50.743395 seconds
+
+ECB: 2 THREAD: 52.435024 seconds
+
+ECB: 2 THREAD: 50.966166 seconds
+
+ECB: 2 THREAD: 49.821378 seconds
+
+ECB: 2 THREAD: 49.839034 seconds
+
+ECB: 2 THREAD: 50.106212 seconds
+
+ECB: 2 THREAD: 50.666875 seconds
+
+ECB: 2 THREAD: 50.352700 seconds
+
+ECB: 2 THREAD: 49.590809 seconds
+
+//////
+ECB: 2 THREAD: 54.264965 seconds
+
+CBC: 2 THREAD: 54.702260 seconds
+
+CFB: 2 THREAD: 30.278228 seconds
+
+CTR: 2 THREAD: 30.295834 seconds
+
+######## 2 THREAD RUN COMPLETE #######
+
+ECB: 2 THREAD: 49.541795 seconds
+
+CBC: 2 THREAD: 50.199464 seconds
+
+CFB: 2 THREAD: 25.616674 seconds
+
+CTR: 2 THREAD: 24.883683 seconds
+
+######## 2 THREAD RUN COMPLETE #######
+
