@@ -38,16 +38,16 @@ int main(int argc, char* argv[])
 
 static void run_CFB_loop(int p_count) 
 {
-    #define CHUNK 1572864 /* read 384 bytes at a time - this is 16*24 - as in, 16bytes times the max number of cores at 24*/
+    #define CHUNK 1572864 // read 1.5mb at a time
     char buf[CHUNK];
     FILE *file;
     size_t nread;
-    char file_name[] = "1gb_lorem.txt";
+    char file_name[] = "random_1gb.txt";
     file = fopen(file_name, "r");
 
     //decryption loop
     if (file) {
-        //read the whole buffer (384 bytes)
+        //read the whole buffer
         while ((nread = fread(buf, 1, sizeof buf, file)) > 0) {
             //run decryption algorithm on each 16 byte (128bit) section at a time
             #pragma omp parallel for num_threads(p_count)
@@ -60,9 +60,6 @@ static void run_CFB_loop(int p_count)
                 }
                 decrypt_cfb(minor_buf);
             }
-        }
-        if (ferror(file)) {
-            printf("File Reading Error...");
         }
         fclose(file);
     }
