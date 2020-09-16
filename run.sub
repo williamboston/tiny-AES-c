@@ -1,8 +1,10 @@
-#!/bin/sh
-#PBS -N AESdecrypt
-#PBS -l walltime=5:00
+#!/bin/bash -l
+#PBS -N AESdecrypt1
+#PBS -l walltime=3:00
 #PBS -l select=1:ncpus=1:mem=1g
 
+cd $PBS_O_WORKDIR
+module load intel
 THREADS=$((1))
 ./ecb.elf $THREADS;
 ./cbc.elf $THREADS;

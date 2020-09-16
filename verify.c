@@ -6,294 +6,292 @@
 #include <omp.h>
 #include "aes.h"
 
-
-static int verify_decrypt_ecb(uint8_t *buf)
-{
-    //init key
-    uint8_t key[] = { 0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6, 0xab, 0xf7, 0x15, 0x88, 0x09, 0xcf, 0x4f, 0x3c };
-    //init aes struct
-    struct AES_ctx ctx;
-
-    //run ECB on AES instance
-    AES_init_ctx(&ctx, key);
-    AES_ECB_decrypt(&ctx, buf);   
-
-    return 1;
-}
-
-static int verify_decrypt_cbc(uint8_t *buf)
-{
-    //init key & init vector
-    uint8_t key[] = { 0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6, 0xab, 0xf7, 0x15, 0x88, 0x09, 0xcf, 0x4f, 0x3c };
-    uint8_t iv[]  = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f };
-    //init aes struct
-    struct AES_ctx ctx;
-    
-    //Run CBC on AES instance
-    AES_init_ctx_iv(&ctx, key, iv);
-    // AES_CBC_decrypt_buffer(&ctx, buf, 16);
-
-    return 1;
-}
-
-static int verify_decrypt_cfb(uint8_t *buf)
-{
-    //init key & init vector
-    uint8_t key[] = { 0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6, 0xab, 0xf7, 0x15, 0x88, 0x09, 0xcf, 0x4f, 0x3c };
-    uint8_t iv[]  = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f };
-    //init aes struct
-    struct AES_ctx ctx;
-    
-    //Run CFB on AES instance
-    AES_init_ctx_iv(&ctx, key, iv);
-    // AES_CFB_decrypt_buffer(&ctx, buf, 16);
-
-    return 1;
-}
-
-static int verify_decrypt_ctr(uint8_t *buf)
-{
-    //init key & init vector
-    uint8_t key[] = { 0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6, 0xab, 0xf7, 0x15, 0x88, 0x09, 0xcf, 0x4f, 0x3c };
-    uint8_t iv[]  = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f };
-    //init aes struct
-    struct AES_ctx ctx;
-    
-    //Run CTR on AES Instance
-    AES_init_ctx_iv(&ctx, key, iv);
-    AES_CTR_xcrypt_buffer(&ctx, buf, 16);
-
-    return 1;
-}
-
 static bool verify_ECB_loop(int p_count)
 {
-    #define CHUNK 384 /* read 384 bytes at a time - this is 16*24 - as in, 16bytes (128 bits) times the max number of cores 24*/
-    char buf[CHUNK];
-    FILE *file;
-    size_t nread;
-    char file_name[] = "512mb_lorem.txt";
-    file = fopen(file_name, "r");
+    // SEQUENTIAL //
 
-    //decryption loop
-    if (file) {
-        //read the whole buffer (384 bytes)
-        while ((nread = fread(buf, 1, sizeof buf, file)) > 0) {
-            //full size buffers that we will compare against
-            uint8_t serial_whole[384];
-            uint8_t para_whole[384];
-            //run decryption algorithm on each 16 byte (128bit) section at a time
-            for (int i=0; i<384; i+=16) {
-                uint8_t serial_buf[16];
-                for (int j=0; j<16; j++) 
-                {
-                    serial_buf[j] = buf[i+j];
-                }
-                //send to decryption function
-                verify_decrypt_ecb(serial_buf);
-                //save to larger buf
-                for (int a=0; a<16; a++) {
-                    serial_whole[i+a] = serial_buf[a];
-                }
-            }
-            #pragma omp parallel for num_threads(p_count)
-            for (int k=0; k<384; k+=16) {
-                uint8_t para_buf[16];
-                for (int l=0; l<16; l++) 
-                {
-                    para_buf[l] = buf[k+l];
-                }
-                //send to decryption function
-                verify_decrypt_ecb(para_buf);
-                //save to larger buf
-                for (int b=0; b<16; b++) {
-                    para_whole[k+b] = para_buf[b];
-                }
-            }
-            //check same outcome for each buffer
-            if (0 != memcmp(serial_whole, para_whole, 384)){
-                return false;
-            }
-        }
-        if (ferror(file)) {
-            printf("File Reading Error...");
-        }
-        fclose(file);
+    //open the file
+    FILE *f1 = fopen("random_1gb.txt", "rb");
+    //find size then rewind
+    fseek(f1, 0, SEEK_END);
+    long fsize1 = ftell(f1);
+    fseek(f1, 0, SEEK_SET);
+
+    //malloc enough memory for the whole text file (1gb)
+    uint8_t *text1 = malloc(fsize1 + 1);
+    int ret1 = fread(text1, 1, fsize1, f1);
+    //close
+    fclose(f1);
+
+    //init key
+    uint8_t key1[] = { 0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6, 0xab, 0xf7, 0x15, 0x88, 0x09, 0xcf, 0x4f, 0x3c };
+
+    //send each 16 byte block to decryption function
+    for (int j=0; j<fsize1;j+=16) {
+        //init aes struct
+        struct AES_ctx ctx;
+        //run ECB on AES instance
+        AES_init_ctx(&ctx, key1);
+        AES_ECB_decrypt(&ctx, &text1[j]);
     }
-    return true;
+
+    // PARALLEL //
+
+    //open the file
+    FILE *f2 = fopen("random_1gb.txt", "rb");
+    //find size then rewind
+    fseek(f2, 0, SEEK_END);
+    long fsize2 = ftell(f2);
+    fseek(f2, 0, SEEK_SET);
+
+    //malloc enough memory for the whole text file (1gb)
+    uint8_t *text2 = malloc(fsize2 + 1);
+    int ret2 = fread(text2, 1, fsize2, f2);
+    //close
+    fclose(f2);
+
+    //init key
+    uint8_t key2[] = { 0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6, 0xab, 0xf7, 0x15, 0x88, 0x09, 0xcf, 0x4f, 0x3c };
+
+    //send each 16 byte block to decryption function
+    #pragma omp parallel for num_threads(p_count)
+    for (int j=0; j<fsize2;j+=16) {
+        //init aes struct
+        struct AES_ctx ctx;
+        //run ECB on AES instance
+        AES_init_ctx(&ctx, key2);
+        AES_ECB_decrypt(&ctx, &text2[j]);
+    }
+
+    // COMPARE //
+
+    //check same outcome for each buffer
+    if (0 == memcmp(text1, text2, fsize1)){
+        return true;
+    }
+
+    // FREE //
+
+    free(text1);
+    free(text2);
 }
 
 
 static bool verify_CBC_loop(int p_count) 
 {
-    #define CHUNK 384 /* read 384 bytes at a time - this is 16*24 - as in, 16bytes times the max number of cores at 24*/
-    char buf[CHUNK];
-    FILE *file;
-    size_t nread;
-    char file_name[] = "512mb_lorem.txt";
-    file = fopen(file_name, "r");
+    // SEQUENTIAL //
 
-    //decryption loop
-    if (file) {
-        //read the whole buffer (384 bytes)
-        while ((nread = fread(buf, 1, sizeof buf, file)) > 0) {
-            //full size buffers that we will compare against
-            uint8_t serial_whole[384];
-            uint8_t para_whole[384];
-            //run decryption algorithm on each 16 byte (128bit) section at a time
-            for (int i=0; i<384; i+=16) {
-                uint8_t serial_buf[16];
-                for (int j=0; j<16; j++) 
-                {
-                    serial_buf[j] = buf[i+j];
-                }
-                //send to decryption function
-                verify_decrypt_cbc(serial_buf);
-                //save to larger buf
-                for (int a=0; a<16; a++) {
-                    serial_whole[i+a] = serial_buf[a];
-                }
-            }
-            #pragma omp parallel for num_threads(p_count)
-            for (int k=0; k<384; k+=16) {
-                uint8_t para_buf[16];
-                for (int l=0; l<16; l++) 
-                {
-                    para_buf[l] = buf[k+l];
-                }
-                //send to decryption function
-                verify_decrypt_cbc(para_buf);
-                //save to larger buf
-                for (int b=0; b<16; b++) {
-                    para_whole[k+b] = para_buf[b];
-                }
-            }
-            //check same outcome for each buffer
-            if (0 != memcmp(serial_whole, para_whole, 384)){
-                return false;
-            }
+    //open the file
+    FILE *f1 = fopen("random_1gb.txt", "rb");
+    //find size then rewind
+    fseek(f1, 0, SEEK_END);
+    long fsize1 = ftell(f1);
+    fseek(f1, 0, SEEK_SET);
+
+    //malloc enough memory for the whole text file (1gb)
+    uint8_t *text1 = malloc(fsize1 + 1);
+    int ret1 = fread(text1, 1, fsize1, f1);
+    //close
+    fclose(f1);
+
+    //init key
+    uint8_t key1[] = { 0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6, 0xab, 0xf7, 0x15, 0x88, 0x09, 0xcf, 0x4f, 0x3c };
+    uint8_t iv1[]  = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f };
+
+    //init aes struct
+    struct AES_ctx ctx1;
+    //run ECB on AES instance
+    AES_init_ctx_iv(&ctx1, key1, iv1);
+    AES_CBC_decrypt_buffer(&ctx1, text1, fsize1, 1);
+
+    // PARALLEL //
+
+    //open the file
+    FILE *f2 = fopen("random_1gb.txt", "rb");
+    //find size then rewind
+    fseek(f2, 0, SEEK_END);
+    long fsize2 = ftell(f2);
+    fseek(f2, 0, SEEK_SET);
+
+    //malloc enough memory for the whole text file (1gb)
+    uint8_t *text2 = malloc(fsize2 + 1);
+    int ret2 = fread(text2, 1, fsize2, f2);
+    //close
+    fclose(f2);
+
+    //init key
+    uint8_t key2[] = { 0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6, 0xab, 0xf7, 0x15, 0x88, 0x09, 0xcf, 0x4f, 0x3c };
+    uint8_t iv2[]  = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f };
+
+    //init aes struct
+    struct AES_ctx ctx2;
+    //run ECB on AES instance
+    AES_init_ctx_iv(&ctx2, key2, iv2);
+    AES_CBC_decrypt_buffer(&ctx2, text2, fsize2, p_count);
+
+    // COMPARE //
+
+    long counter = 0;
+    for (int i=0;i<fsize1;i+=16){
+        if (0 == memcmp(text1, text2, 16)){
+            counter++;
         }
-        if (ferror(file)) {
-            printf("File Reading Error...");
-        }
-        fclose(file);
     }
-    return true;
+    int errors = (fsize1/16) - counter;
+
+    // FREE //
+
+    free(text1);
+    free(text2);
+
+    //return true on 0 errors
+    if (errors == 0){
+        return true;
+    }
 }
 
 
 static bool verify_CFB_loop(int p_count) 
 {
-    #define CHUNK 384 /* read 384 bytes at a time - this is 16*24 - as in, 16bytes times the max number of cores at 24*/
-    char buf[CHUNK];
-    FILE *file;
-    size_t nread;
-    char file_name[] = "512mb_lorem.txt";
-    file = fopen(file_name, "r");
+    // SEQUENTIAL //
 
-    //decryption loop
-    if (file) {
-        //read the whole buffer (384 bytes)
-        while ((nread = fread(buf, 1, sizeof buf, file)) > 0) {
-            //full size buffers that we will compare against
-            uint8_t serial_whole[384];
-            uint8_t para_whole[384];
-            //run decryption algorithm on each 16 byte (128bit) section at a time
-            for (int i=0; i<384; i+=16) {
-                uint8_t serial_buf[16];
-                for (int j=0; j<16; j++) 
-                {
-                    serial_buf[j] = buf[i+j];
-                }
-                //send to decryption function
-                verify_decrypt_cfb(serial_buf);
-                //save to larger buf
-                for (int a=0; a<16; a++) {
-                    serial_whole[i+a] = serial_buf[a];
-                }
-            }
-            #pragma omp parallel for num_threads(p_count)
-            for (int k=0; k<384; k+=16) {
-                uint8_t para_buf[16];
-                for (int l=0; l<16; l++) 
-                {
-                    para_buf[l] = buf[k+l];
-                }
-                //send to decryption function
-                verify_decrypt_cfb(para_buf);
-                //save to larger buf
-                for (int b=0; b<16; b++) {
-                    para_whole[k+b] = para_buf[b];
-                }
-            }
-            //check same outcome for each buffer
-            if (0 != memcmp(serial_whole, para_whole, 384)){
-                return false;
-            }
+    //open the file
+    FILE *f1 = fopen("random_1gb.txt", "rb");
+    //find size then rewind
+    fseek(f1, 0, SEEK_END);
+    long fsize1 = ftell(f1);
+    fseek(f1, 0, SEEK_SET);
+
+    //malloc enough memory for the whole text file (1gb)
+    uint8_t *text1 = malloc(fsize1 + 1);
+    int ret1 = fread(text1, 1, fsize1, f1);
+    //close
+    fclose(f1);
+
+    //init key
+    uint8_t key1[] = { 0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6, 0xab, 0xf7, 0x15, 0x88, 0x09, 0xcf, 0x4f, 0x3c };
+    uint8_t iv1[]  = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f };
+
+    //init aes struct
+    struct AES_ctx ctx1;
+    //run ECB on AES instance
+    AES_init_ctx_iv(&ctx1, key1, iv1);
+    AES_CFB_decrypt_buffer(&ctx1, text1, fsize1, 1);
+
+    // PARALLEL //
+
+    //open the file
+    FILE *f2 = fopen("random_1gb.txt", "rb");
+    //find size then rewind
+    fseek(f2, 0, SEEK_END);
+    long fsize2 = ftell(f2);
+    fseek(f2, 0, SEEK_SET);
+
+    //malloc enough memory for the whole text file (1gb)
+    uint8_t *text2 = malloc(fsize2 + 1);
+    int ret2 = fread(text2, 1, fsize2, f2);
+    //close
+    fclose(f2);
+
+    //init key
+    uint8_t key2[] = { 0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6, 0xab, 0xf7, 0x15, 0x88, 0x09, 0xcf, 0x4f, 0x3c };
+    uint8_t iv2[]  = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f };
+
+    //init aes struct
+    struct AES_ctx ctx2;
+    //run ECB on AES instance
+    AES_init_ctx_iv(&ctx2, key2, iv2);
+    AES_CFB_decrypt_buffer(&ctx2, text2, fsize2, p_count);
+
+    // COMPARE //
+
+    long counter = 0;
+    for (int i=0;i<fsize1;i+=16){
+        if (0 == memcmp(text1, text2, 16)){
+            counter++;
         }
-        if (ferror(file)) {
-            printf("File Reading Error...");
-        }
-        fclose(file);
     }
-    return true;
+    int errors = (fsize1/16) - counter;
+
+    // FREE //
+
+    free(text1);
+    free(text2);
+
+    //return true on 0 errors
+    if (errors == 0){
+        return true;
+    }
 }
 
 static bool verify_CTR_loop(int p_count) 
 {
-    #define CHUNK 384 /* read 384 bytes at a time - this is 16*24 - as in, 16bytes times the max number of cores at 24*/
-    char buf[CHUNK];
-    FILE *file;
-    size_t nread;
-    char file_name[] = "512mb_lorem.txt";
-    file = fopen(file_name, "r");
+    // SEQUENTIAL //
 
-    //decryption loop
-    if (file) {
-        //read the whole buffer (384 bytes)
-        while ((nread = fread(buf, 1, sizeof buf, file)) > 0) {
-            //full size buffers that we will compare against
-            uint8_t serial_whole[384];
-            uint8_t para_whole[384];
-            //run decryption algorithm on each 16 byte (128bit) section at a time
-            for (int i=0; i<384; i+=16) {
-                uint8_t serial_buf[16];
-                for (int j=0; j<16; j++) 
-                {
-                    serial_buf[j] = buf[i+j];
-                }
-                //send to decryption function
-                verify_decrypt_ctr(serial_buf);
-                //save to larger buf
-                for (int a=0; a<16; a++) {
-                    serial_whole[i+a] = serial_buf[a];
-                }
-            }
-            #pragma omp parallel for num_threads(p_count)
-            for (int k=0; k<384; k+=16) {
-                uint8_t para_buf[16];
-                for (int l=0; l<16; l++) 
-                {
-                    para_buf[l] = buf[k+l];
-                }
-                //send to decryption function
-                verify_decrypt_ctr(para_buf);
-                //save to larger buf
-                for (int b=0; b<16; b++) {
-                    para_whole[k+b] = para_buf[b];
-                }
-            }
-            //check same outcome for each buffer
-            if (0 != memcmp(serial_whole, para_whole, 384)){
-                return false;
-            }
-        }
-        if (ferror(file)) {
-            printf("File Reading Error...");
-        }
-        fclose(file);
+    //open the file
+    FILE *f1 = fopen("random_1gb.txt", "rb");
+    //find size then rewind
+    fseek(f1, 0, SEEK_END);
+    long fsize1 = ftell(f1);
+    fseek(f1, 0, SEEK_SET);
+
+    //malloc enough memory for the whole text file (1gb)
+    uint8_t *text1 = malloc(fsize1 + 1);
+    int ret1 = fread(text1, 1, fsize1, f1);
+    //close
+    fclose(f1);
+
+    //init key
+    uint8_t key1[] = { 0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6, 0xab, 0xf7, 0x15, 0x88, 0x09, 0xcf, 0x4f, 0x3c };
+
+    //send each 16 byte block to decryption function
+    for (int j=0; j<fsize1;j+=16) {
+        //init aes struct
+        struct AES_ctx ctx;
+        //run ECB on AES instance
+        AES_init_ctx(&ctx, key1);
+        AES_CTR_xcrypt_buffer(&ctx, &text1[j], 16);
     }
-    return true;
+
+    // PARALLEL //
+
+    //open the file
+    FILE *f2 = fopen("random_1gb.txt", "rb");
+    //find size then rewind
+    fseek(f2, 0, SEEK_END);
+    long fsize2 = ftell(f2);
+    fseek(f2, 0, SEEK_SET);
+
+    //malloc enough memory for the whole text file (1gb)
+    uint8_t *text2 = malloc(fsize2 + 1);
+    int ret2 = fread(text2, 1, fsize2, f2);
+    //close
+    fclose(f2);
+
+    //init key
+    uint8_t key2[] = { 0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6, 0xab, 0xf7, 0x15, 0x88, 0x09, 0xcf, 0x4f, 0x3c };
+
+    //send each 16 byte block to decryption function
+    #pragma omp parallel for num_threads(p_count)
+    for (int j=0; j<fsize2;j+=16) {
+        //init aes struct
+        struct AES_ctx ctx;
+        //run ECB on AES instance
+        AES_init_ctx(&ctx, key2);
+        AES_CTR_xcrypt_buffer(&ctx, &text2[j], 16);
+    }
+
+    // COMPARE //
+
+    //check same outcome for each buffer
+    if (0 == memcmp(text1, text2, fsize1)){
+        return true;
+    }
+
+    // FREE //
+
+    free(text1);
+    free(text2);
 }
 
 int main(int argc, char* argv[]) {
@@ -301,25 +299,25 @@ int main(int argc, char* argv[]) {
     //get process count
     int p_count = atoi(argv[1]);
 
-    //execute ECB parallel and serial I/O loop, then compares
+    //execute ECB parallel and serial loop, then compare the result
     printf("\nRunning ECB Check...\n");
     if (verify_ECB_loop(p_count)){
         printf("All ECB encryption successful and verified!\n\n");
     }
 
-    //execute CBC parallel and serial I/O loop, then compares
+    //execute CBC parallel and serial loop, then compare the result
     printf("Running CBC Check...\n");
     if (verify_CBC_loop(p_count)){
         printf("All CBC encryption successful and verified!\n\n");
     }
 
-    //execute CFB parallel and serial I/O loop, then compares
+    //execute CFB parallel and serial loop, then compare the result
     printf("Running CFB Check...\n");
     if (verify_CFB_loop(p_count)){
         printf("All CFB encryption successful and verified!\n\n");
     }
 
-    //execute CTR parallel and serial I/O loop, then compares
+    //execute CTR parallel and serial loop, then compare the result
     printf("Running CTR Check...\n");
     if (verify_CTR_loop(p_count)){
         printf("All CTR encryption successful and verified!\n\n");

@@ -515,21 +515,35 @@ void AES_CBC_encrypt_buffer(struct AES_ctx *ctx, uint8_t* buf, uint32_t length)
 void AES_CBC_decrypt_buffer(struct AES_ctx* ctx, uint8_t* buf,  uint32_t length, int p_count)
 {
   uintptr_t i;
+  
+  InvCipher((state_t*)&buf[0], ctx->RoundKey);
 
-  //decrypt first 16 bytes of buffer
-  uint8_t *first16 = &buf[0];
-  InvCipher((state_t*)first16, ctx->RoundKey);
+    // for (int k=0;k<16;k++){
+    //     printf("%u ", buf[k]);
+    // }
+    // printf("\n");
+
   XorWithIv(&buf[0], ctx->Iv);
+
+    // for (int k=0;k<16;k++){
+    //     printf("%u ", buf[k]);
+    // }
+    // printf("\n");
 
   //loop through remainder of buffer
   #pragma omp parallel for num_threads(p_count)
   for (i = 16; i < length; i += AES_BLOCKLEN)
   {
-    uint8_t *ptr = &buf[i];
+    // uint8_t *ptr = &buf[i];
     uint8_t *temp_iv = &buf[i-16];
-    InvCipher((state_t*)ptr, ctx->RoundKey);
-    XorWithIv(ptr, temp_iv);
+    InvCipher((state_t*)&buf[i], ctx->RoundKey);
+    XorWithIv(&buf[i], temp_iv);
   }
+
+    // for (int k=0;k<16;k++){
+    //     printf("%u ", buf[k]);
+    // }
+    // printf("\n");
 }
 
 void AES_CFB_decrypt_buffer(struct AES_ctx* ctx, uint8_t* buf,  uint32_t length, int p_count)
@@ -544,10 +558,10 @@ void AES_CFB_decrypt_buffer(struct AES_ctx* ctx, uint8_t* buf,  uint32_t length,
   #pragma omp parallel for num_threads(p_count)
   for (i = 16; i < length; i += AES_BLOCKLEN)
   {
-    uint8_t *ptr = &buf[i];
+    // uint8_t *ptr = &buf[i];
     uint8_t *temp_iv = &buf[i-16];
-    Cipher((state_t*)temp_iv, ctx->RoundKey);
-    XorWithIv(ptr, temp_iv);
+    Cipher((state_t*)&buf[i], ctx->RoundKey);
+    XorWithIv(&buf[i], temp_iv);
   }
 }
 
