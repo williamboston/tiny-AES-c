@@ -5,7 +5,7 @@
 #include <omp.h>
 #include "aes.h"
 
-static void run_CTR_loop(uint8_t key[], uint8_t text[], long fsize, int p_count);
+static void run_CTR_loop(uint8_t key[], uint8_t text[], long fsize, int p_count, uint8_t iv[]);
 static void write_CTR_output(double time, int p_count);
 
 int main(int argc, char* argv[])
@@ -30,6 +30,7 @@ int main(int argc, char* argv[])
 
     //init key
     uint8_t key[] = { 0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6, 0xab, 0xf7, 0x15, 0x88, 0x09, 0xcf, 0x4f, 0x3c };
+    uint8_t iv[16] = { 0xf0, 0xf1, 0xf2, 0xf3, 0xf4, 0xf5, 0xf6, 0xf7, 0xf8, 0xf9, 0xfa, 0xfb, 0xfc, 0xfd, 0xfe, 0xff };
 
     //timestamp start
     struct timeval *start = malloc(sizeof(struct timeval));
@@ -38,7 +39,7 @@ int main(int argc, char* argv[])
     gettimeofday(start, NULL);
 
     //executes decryption loop
-    run_CTR_loop(key, text, fsize, p_count);
+    run_CTR_loop(key, text, fsize, p_count, iv);
 
     //timestamp end
     gettimeofday(stop, NULL);
@@ -50,16 +51,16 @@ int main(int argc, char* argv[])
     return 0;
 }
 
-static void run_CTR_loop(uint8_t key[], uint8_t text[], long fsize, int p_count) 
+static void run_CTR_loop(uint8_t key[], uint8_t text[], long fsize, int p_count, uint8_t iv[]) 
 {
     //send each 16 byte block to decryption function
-    #pragma omp parallel for num_threads(p_count)
-    for (int j=0; j<fsize;j+=16) {
+    // #pragma omp parallel for num_threads(p_count)
+    for (int j=0; j<fsize;j+=fsize) {
         //init aes struct
         struct AES_ctx ctx;
         //run ECB on AES instance
-        AES_init_ctx(&ctx, key);
-        AES_CTR_xcrypt_buffer(&ctx, &text[j], 16);
+        AES_init_ctx_iv(&ctx, key, iv);
+        AES_CTR_xcrypt_buffer(&ctx, text, fsize, p_count);
     }
 }
 

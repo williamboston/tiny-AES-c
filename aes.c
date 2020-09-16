@@ -572,12 +572,13 @@ void AES_CFB_decrypt_buffer(struct AES_ctx* ctx, uint8_t* buf,  uint32_t length,
 #if defined(CTR) && (CTR == 1)
 
 /* Symmetrical operation: same function for encrypting as for decrypting. Note any IV/nonce should never be reused with the same key */
-void AES_CTR_xcrypt_buffer(struct AES_ctx* ctx, uint8_t* buf, uint32_t length)
+void AES_CTR_xcrypt_buffer(struct AES_ctx* ctx, uint8_t* buf, uint32_t length, int p_count)
 {
   uint8_t buffer[AES_BLOCKLEN];
   unsigned i;
   int bi;
 
+  // #pragma omp parallel for num_threads(p_count)
   for (i = 0, bi = AES_BLOCKLEN; i < length; ++i, ++bi)
   {
     if (bi == AES_BLOCKLEN) /* we need to regen xor compliment in buffer */
