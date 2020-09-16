@@ -31,7 +31,7 @@ static int verify_decrypt_cbc(uint8_t *buf)
     
     //Run CBC on AES instance
     AES_init_ctx_iv(&ctx, key, iv);
-    AES_CBC_decrypt_buffer(&ctx, buf, 16);
+    // AES_CBC_decrypt_buffer(&ctx, buf, 16);
 
     return 1;
 }
@@ -46,7 +46,7 @@ static int verify_decrypt_cfb(uint8_t *buf)
     
     //Run CFB on AES instance
     AES_init_ctx_iv(&ctx, key, iv);
-    AES_CFB_decrypt_buffer(&ctx, buf, 16);
+    // AES_CFB_decrypt_buffer(&ctx, buf, 16);
 
     return 1;
 }

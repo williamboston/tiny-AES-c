@@ -5,8 +5,7 @@
 #include <omp.h>
 #include "aes.h"
 
-static void run_CBC_loop(int p_count);
-static int decrypt_cbc(uint8_t *buf);
+static void run_CBC_loop(uint8_t key[], uint8_t text[], long fsize, int p_count);
 static void write_CBC_output(double time, int p_count);
 
 
@@ -14,17 +13,33 @@ int main(int argc, char* argv[])
 {
     printf("\nTesting AES128 in CBC Mode...\n");
 
+    //get process count
+    int p_count = atoi(argv[1]);
+
+    //open the file
+    FILE *f = fopen("random_1gb.txt", "rb");
+    //find size then rewind
+    fseek(f, 0, SEEK_END);
+    long fsize = ftell(f);
+    fseek(f, 0, SEEK_SET);
+
+    //malloc enough memory for the whole text file (1gb)
+    uint8_t *text = malloc(fsize + 1);
+    int ret = fread(text, 1, fsize, f);
+    //close
+    fclose(f);
+
+    //init key
+    uint8_t key[] = { 0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6, 0xab, 0xf7, 0x15, 0x88, 0x09, 0xcf, 0x4f, 0x3c };
+
     //timestamp start
     struct timeval *start = malloc(sizeof(struct timeval));
     struct timeval *stop = malloc(sizeof(struct timeval));
     double secs = 0;
     gettimeofday(start, NULL);
 
-    //get process count
-    int p_count = atoi(argv[1]);
-
-    //executes decryption I/O loop
-    run_CBC_loop(p_count);
+    //executes decryption loop
+    run_CBC_loop(key, text, fsize, p_count);
 
     //timestamp end
     gettimeofday(stop, NULL);
@@ -36,48 +51,14 @@ int main(int argc, char* argv[])
     return 0;
 }
 
-static void run_CBC_loop(int p_count) 
+//send whole buffer to CBC encryption loop
+static void run_CBC_loop(uint8_t key[], uint8_t text[], long fsize, int p_count) 
 {
-    #define CHUNK 1572864 // read 1.5mb at a time
-    char buf[CHUNK];
-    FILE *file;
-    size_t nread;
-    char file_name[] = "random_1gb.txt";
-    file = fopen(file_name, "r");
-
-    //decryption loop
-    if (file) {
-        //read the whole buffer
-        while ((nread = fread(buf, 1, sizeof buf, file)) > 0) {
-            //run decryption algorithm on each 16 byte (128bit) section at a time
-            #pragma omp parallel for num_threads(p_count)
-            for (int i=0; i<1572864; i+=16) {
-                //create temporary buffer to send to decryption
-                uint8_t minor_buf[16];
-                for (int j=0; j<16; j++) 
-                {
-                    minor_buf[j] = buf[i+j];
-                }
-                decrypt_cbc(minor_buf);
-            }
-        }
-        fclose(file);
-    }
-}
-
-static int decrypt_cbc(uint8_t *buf)
-{
-    //init key & init vector
-    uint8_t key[] = { 0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6, 0xab, 0xf7, 0x15, 0x88, 0x09, 0xcf, 0x4f, 0x3c };
-    uint8_t iv[]  = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f };
     //init aes struct
     struct AES_ctx ctx;
-    
-    //Run CBC on AES instance
-    AES_init_ctx_iv(&ctx, key, iv);
-    AES_CBC_decrypt_buffer(&ctx, buf, 16);
-
-    return 1;
+    //run ECB on AES instance
+    AES_init_ctx(&ctx, key);
+    AES_CBC_decrypt_buffer(&ctx, text, fsize, p_count);
 }
 
 // appends test output to out.txt for storage/analysis

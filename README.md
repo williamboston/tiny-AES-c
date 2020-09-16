@@ -16,8 +16,11 @@ make
 sh run.sh
 ```
 
-* Requires large .txt file as file input - this implementation uses a variety of large (512mb, 1gb, 2gb) 'lorem ipsum' text files as dummy input to measure performance - none are included in this repository. See this [link](https://www.windows-commandline.com/how-to-create-large-dummy-file/) for information on how to create these files if required (Windows only)
-* Thread count is given as a single argument for each mode of operation in run.sh - edit as necessary
+* Requires large .txt file as file input - this implementation uses a variety of large (512mb, 1gb, 2gb) 'lorem ipsum' and random number text files as dummy input to measure performance - none are included in this repository but they're easy enought to generate on both Windows and Linux
+* Thread count is given as a single argument for each mode of operation in run.sh - edit as necessary. Individual modes can be run in isolation as well - eg:
+```
+./cbc.elf 16
+```
 * Results are saved in 'out.txt'
 
 ### Verification:

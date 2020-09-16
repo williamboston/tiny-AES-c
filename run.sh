@@ -1,5 +1,5 @@
 #!/bin/sh
-THREADS=$((2))
+THREADS=$((4))
 ./ecb.elf $THREADS;
 ./cbc.elf $THREADS;
 ./cfb.elf $THREADS;

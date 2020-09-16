@@ -37,6 +37,7 @@ NOTE:   String length must be evenly divisible by 16byte (str_len % 16 == 0)
 /*****************************************************************************/
 #include <string.h> // CBC mode, for memset
 #include "aes.h"
+#include <omp.h>
 #include <stdio.h>
 
 /*****************************************************************************/
@@ -511,31 +512,42 @@ void AES_CBC_encrypt_buffer(struct AES_ctx *ctx, uint8_t* buf, uint32_t length)
   memcpy(ctx->Iv, Iv, AES_BLOCKLEN);
 }
 
-void AES_CBC_decrypt_buffer(struct AES_ctx* ctx, uint8_t* buf,  uint32_t length)
+void AES_CBC_decrypt_buffer(struct AES_ctx* ctx, uint8_t* buf,  uint32_t length, int p_count)
 {
   uintptr_t i;
-  uint8_t storeNextIv[AES_BLOCKLEN];
-  for (i = 0; i < length; i += AES_BLOCKLEN)
+
+  //decrypt first 16 bytes of buffer
+  uint8_t *first16 = &buf[0];
+  InvCipher((state_t*)first16, ctx->RoundKey);
+  XorWithIv(&buf[0], ctx->Iv);
+
+  //loop through remainder of buffer
+  #pragma omp parallel for num_threads(p_count)
+  for (i = 16; i < length; i += AES_BLOCKLEN)
   {
-    memcpy(storeNextIv, buf, AES_BLOCKLEN);
-    InvCipher((state_t*)buf, ctx->RoundKey);
-    XorWithIv(buf, ctx->Iv);
-    memcpy(ctx->Iv, storeNextIv, AES_BLOCKLEN);
-    buf += AES_BLOCKLEN;
+    uint8_t *ptr = &buf[i];
+    uint8_t *temp_iv = &buf[i-16];
+    InvCipher((state_t*)ptr, ctx->RoundKey);
+    XorWithIv(ptr, temp_iv);
   }
 }
 
-void AES_CFB_decrypt_buffer(struct AES_ctx* ctx, uint8_t* buf,  uint32_t length)
+void AES_CFB_decrypt_buffer(struct AES_ctx* ctx, uint8_t* buf,  uint32_t length, int p_count)
 {
   uintptr_t i;
-  uint8_t storeNextIv[AES_BLOCKLEN];
-  for (i = 0; i < length; i += AES_BLOCKLEN)
+
+  //decrypt first 16 bytes of buffer
+  Cipher((state_t*)ctx->Iv, ctx->RoundKey);
+  XorWithIv(&buf[0], ctx->Iv);
+
+  //loop through remainder of buffer
+  #pragma omp parallel for num_threads(p_count)
+  for (i = 16; i < length; i += AES_BLOCKLEN)
   {
-    memcpy(storeNextIv, buf, AES_BLOCKLEN);
-    Cipher((state_t*)ctx->Iv, ctx->RoundKey);
-    XorWithIv(buf, ctx->Iv);
-    memcpy(ctx->Iv, storeNextIv, AES_BLOCKLEN);
-    buf += AES_BLOCKLEN;
+    uint8_t *ptr = &buf[i];
+    uint8_t *temp_iv = &buf[i-16];
+    Cipher((state_t*)temp_iv, ctx->RoundKey);
+    XorWithIv(ptr, temp_iv);
   }
 }
 
@@ -549,23 +561,22 @@ void AES_CFB_decrypt_buffer(struct AES_ctx* ctx, uint8_t* buf,  uint32_t length)
 void AES_CTR_xcrypt_buffer(struct AES_ctx* ctx, uint8_t* buf, uint32_t length)
 {
   uint8_t buffer[AES_BLOCKLEN];
-  
   unsigned i;
   int bi;
+
   for (i = 0, bi = AES_BLOCKLEN; i < length; ++i, ++bi)
   {
     if (bi == AES_BLOCKLEN) /* we need to regen xor compliment in buffer */
-    {
-      
+    {      
       memcpy(buffer, ctx->Iv, AES_BLOCKLEN);
       Cipher((state_t*)buffer,ctx->RoundKey);
 
       /* Increment Iv and handle overflow */
       for (bi = (AES_BLOCKLEN - 1); bi >= 0; --bi)
       {
-	/* inc will overflow */
+	      /* inc will overflow */
         if (ctx->Iv[bi] == 255)
-	{
+	      {
           ctx->Iv[bi] = 0;
           continue;
         } 
@@ -574,7 +585,6 @@ void AES_CTR_xcrypt_buffer(struct AES_ctx* ctx, uint8_t* buf, uint32_t length)
       }
       bi = 0;
     }
-
     buf[i] = (buf[i] ^ buffer[bi]);
   }
 }

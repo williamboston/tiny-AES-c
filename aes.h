@@ -70,8 +70,8 @@ void AES_ECB_decrypt(const struct AES_ctx* ctx, uint8_t* buf);
 // NOTES: you need to set IV in ctx via AES_init_ctx_iv() or AES_ctx_set_iv()
 //        no IV should ever be reused with the same key 
 void AES_CBC_encrypt_buffer(struct AES_ctx* ctx, uint8_t* buf, uint32_t length);
-void AES_CBC_decrypt_buffer(struct AES_ctx* ctx, uint8_t* buf, uint32_t length);
-void AES_CFB_decrypt_buffer(struct AES_ctx* ctx, uint8_t* buf, uint32_t length);
+void AES_CBC_decrypt_buffer(struct AES_ctx* ctx, uint8_t* buf, uint32_t length, int p_count);
+void AES_CFB_decrypt_buffer(struct AES_ctx* ctx, uint8_t* buf, uint32_t length, int p_count);
 
 #endif // #if defined(CBC) && (CBC == 1)
 
