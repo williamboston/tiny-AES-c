@@ -245,14 +245,11 @@ static bool verify_CTR_loop(int p_count)
     uint8_t key1[] = { 0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6, 0xab, 0xf7, 0x15, 0x88, 0x09, 0xcf, 0x4f, 0x3c };
     uint8_t iv1[16]  = { 0xf0, 0xf1, 0xf2, 0xf3, 0xf4, 0xf5, 0xf6, 0xf7, 0xf8, 0xf9, 0xfa, 0xfb, 0xfc, 0xfd, 0xfe, 0xff };
 
-    //send each 16 byte block to decryption function
-    for (int j=0; j<fsize1;j+=16) {
-        //init aes struct
-        struct AES_ctx ctx;
-        //run ECB on AES instance
-        AES_init_ctx_iv(&ctx, key1, iv1);
-        AES_CTR_xcrypt_buffer(&ctx, &text1[j], 16, p_count);
-    }
+    //init aes struct
+    struct AES_ctx ctx1;
+    //run ECB on AES instance
+    AES_init_ctx_iv(&ctx1, key1, iv1);
+    AES_CTR_xcrypt_buffer(&ctx1, text1, fsize1, p_count);
 
     // PARALLEL //
 
@@ -273,15 +270,11 @@ static bool verify_CTR_loop(int p_count)
     uint8_t key2[] = { 0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6, 0xab, 0xf7, 0x15, 0x88, 0x09, 0xcf, 0x4f, 0x3c };
     uint8_t iv2[16]  = { 0xf0, 0xf1, 0xf2, 0xf3, 0xf4, 0xf5, 0xf6, 0xf7, 0xf8, 0xf9, 0xfa, 0xfb, 0xfc, 0xfd, 0xfe, 0xff };
 
-    //send each 16 byte block to decryption function
-    #pragma omp parallel for num_threads(p_count)
-    for (int j=0; j<fsize2;j+=16) {
-        //init aes struct
-        struct AES_ctx ctx;
-        //run ECB on AES instance
-        AES_init_ctx_iv(&ctx, key2, iv2);
-        AES_CTR_xcrypt_buffer(&ctx, &text2[j], 16, p_count);
-    }
+    //init aes struct
+    struct AES_ctx ctx2;
+    //run CTR on AES instance
+    AES_init_ctx_iv(&ctx2, key2, iv2);
+    AES_CTR_xcrypt_buffer(&ctx2, text2, fsize2, p_count);
 
     // COMPARE //
 

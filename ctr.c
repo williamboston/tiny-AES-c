@@ -53,15 +53,10 @@ int main(int argc, char* argv[])
 
 static void run_CTR_loop(uint8_t key[], uint8_t text[], long fsize, int p_count, uint8_t iv[]) 
 {
-    //send each 16 byte block to decryption function
-    // #pragma omp parallel for num_threads(p_count)
-    for (int j=0; j<fsize;j+=fsize) {
-        //init aes struct
-        struct AES_ctx ctx;
-        //run ECB on AES instance
-        AES_init_ctx_iv(&ctx, key, iv);
-        AES_CTR_xcrypt_buffer(&ctx, text, fsize, p_count);
-    }
+    struct AES_ctx ctx;
+    //run ECB on AES instance
+    AES_init_ctx_iv(&ctx, key, iv);
+    AES_CTR_xcrypt_buffer(&ctx, text, fsize, p_count);
 }
 
 // appends test output to out.txt for storage/analysis
