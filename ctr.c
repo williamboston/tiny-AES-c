@@ -66,7 +66,6 @@ static void write_CTR_output(double time, int p_count)
     out = fopen("out.txt", "a");
     fprintf(out, "CTR: %d THREAD: ", p_count);
     fprintf(out, "%f seconds\n\n", time);
-    fprintf(out, "######## %d THREAD RUN COMPLETE #######\n\n", p_count);
     fclose(out);
     printf("CTR Done! Result saved to out.txt\n\n");
 }

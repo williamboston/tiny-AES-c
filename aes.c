@@ -516,6 +516,7 @@ void AES_CBC_decrypt_buffer(struct AES_ctx* ctx, uint8_t* buf,  uint32_t length,
 {
   uintptr_t i;
   
+  //decrypt first 16 bytes of buffer
   InvCipher((state_t*)&buf[0], ctx->RoundKey);
   XorWithIv(&buf[0], ctx->Iv);
 
@@ -554,65 +555,26 @@ void AES_CFB_decrypt_buffer(struct AES_ctx* ctx, uint8_t* buf,  uint32_t length,
 
 #if defined(CTR) && (CTR == 1)
 
-// /* Symmetrical operation: same function for encrypting as for decrypting. Note any IV/nonce should never be reused with the same key */
-// void AES_CTR_xcrypt_buffer(struct AES_ctx* ctx, uint8_t* buf, uint32_t length, int p_count)
-// {
-//   omp_lock_t wlock;
-//   omp_init_lock(&wlock);
-//   uint8_t buffer[AES_BLOCKLEN];
-
-//   #pragma omp parallel for num_threads(p_count) //schedule(dynamic)
-//   for (int i=0; i<length; i++)
-//   {
-//     int mod = i%AES_BLOCKLEN;
-
-//     //regen the buffer
-//     if (mod == 0)
-//     {
-//       omp_set_lock(&wlock);
-//       memcpy(buffer, ctx->Iv, AES_BLOCKLEN);
-//       Cipher((state_t*)buffer, ctx->RoundKey);
-
-//       /* Increment Iv and handle overflow */
-//       for (int j = (AES_BLOCKLEN - 1); j >= 0; --j)
-//       {
-//         if (ctx->Iv[j] == 255)
-//         {
-//           ctx->Iv[j] = 0;
-//           continue;
-//         }
-//         ctx->Iv[j] += 1;
-//         omp_unset_lock(&wlock);
-//         break;
-//       }
-//     }
-//     //XOR this bad boy
-//     buf[i] = (buf[i] ^ buffer[mod]);
-//   }  
-//   omp_destroy_lock(&wlock);
-// }
-
-// yes this buffer increment is broken, but I'm on a deadline
+// yes this buffer increment is dodgy, but I'm on a deadline and it'll do for POC
 void AES_CTR_xcrypt_buffer(struct AES_ctx* ctx, uint8_t* buf, uint32_t length, int p_count) {
   
   #pragma omp parallel for num_threads(p_count) //schedule(dynamic)
-  for (int i=0; i<length; i+=16) {
+  for (long i=0; i<length; i+=16) {
 
     uint8_t buffer[AES_BLOCKLEN];
     uint8_t tempIV[AES_BLOCKLEN];
     memcpy(tempIV, ctx->Iv, AES_BLOCKLEN);
-
-    for (int j=AES_BLOCKLEN-1; j>=0; j--) {
-        if (tempIV[j] == 255) {
-          tempIV[j] = ((i/16)%256);
-        }
-    }
+    //'count' up buffer
+    tempIV[12] == (((i/16/16777216) + (tempIV[12]*16*16777216)) % 256);
+    tempIV[13] += ((i/16/65536)%256);
+    tempIV[14] += ((i/16/256)%256);
+    tempIV[15] = (i/16)%256;
+    
     memcpy(buffer, tempIV, AES_BLOCKLEN);
     Cipher((state_t*)buffer, ctx->RoundKey);
     XorWithIv(&buf[i], buffer);
   }
 }
-
 
 #endif // #if defined(CTR) && (CTR == 1)
 

@@ -16,7 +16,7 @@ make
 sh run.sh
 ```
 
-* Requires large .txt file as file input - this implementation uses a variety of large (512mb, 1gb, 2gb) 'lorem ipsum' and random number text files as dummy input to measure performance - none are included in this repository but they're easy enought to generate on both Windows and Linux
+* Requires large .txt file as file input - this implementation uses a variety of large (512mb, 1gb, 2gb) 'lorem ipsum' and random number text files as dummy input to measure performance - none are included in this repository but they're easy enought to generate.
 * Thread count is given as a single argument for each mode of operation in run.sh - edit as necessary. 
 * Individual modes can be run in isolation as well - the below would run just CBC mode on 128 threads:
 ```
