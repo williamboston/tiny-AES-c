@@ -53,12 +53,13 @@ int main(int argc, char* argv[])
 }
 
 //send whole buffer to CBC encryption loop
+
 static void run_CBC_loop(uint8_t key[], uint8_t text[], long fsize, int p_count, uint8_t iv[]) 
 {
     //init aes struct
     struct AES_ctx ctx;
-    //run ECB on AES instance
     AES_init_ctx_iv(&ctx, key, iv);
+    //perform decrypt
     AES_CBC_decrypt_buffer(&ctx, text, fsize, p_count);
 }
 

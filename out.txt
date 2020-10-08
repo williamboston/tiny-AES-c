@@ -1,4 +1,0 @@
-ECB: 4 THREAD: 42.532956 seconds
-
-CBC: 4 THREAD: 40.514796 seconds
-

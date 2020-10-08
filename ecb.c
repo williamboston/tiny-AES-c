@@ -60,6 +60,7 @@ static void run_ECB_loop(uint8_t key[], uint8_t text[], long fsize, int p_count)
         struct AES_ctx ctx;
         //run ECB on AES instance
         AES_init_ctx(&ctx, key);
+        //perform decrypt
         AES_ECB_decrypt(&ctx, &text[j]);
     }
 }

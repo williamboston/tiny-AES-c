@@ -36,6 +36,7 @@ NOTE:   String length must be evenly divisible by 16byte (str_len % 16 == 0)
 /* Includes:                                                                 */
 /*****************************************************************************/
 #include <string.h> // CBC mode, for memset
+#include <stdlib.h>
 #include "aes.h"
 #include <omp.h>
 #include <stdio.h>
@@ -474,7 +475,7 @@ void AES_ECB_encrypt(const struct AES_ctx* ctx, uint8_t* buf)
 
 void AES_ECB_decrypt(const struct AES_ctx* ctx, uint8_t* buf)
 {
-  // The next function call decrypts the PlainText with the Key using AES algorithm.
+  //run rinjdael operation
   InvCipher((state_t*)buf, ctx->RoundKey);
 }
 
@@ -515,7 +516,11 @@ void AES_CBC_encrypt_buffer(struct AES_ctx *ctx, uint8_t* buf, uint32_t length)
 void AES_CBC_decrypt_buffer(struct AES_ctx* ctx, uint8_t* buf,  uint32_t length, int p_count)
 {
   uintptr_t i;
-  
+
+  //generate fixed copy of buffer to read previous block
+  uint8_t* buf_cpy = malloc(length);
+  memcpy(buf_cpy, buf, length);
+
   //decrypt first 16 bytes of buffer
   InvCipher((state_t*)&buf[0], ctx->RoundKey);
   XorWithIv(&buf[0], ctx->Iv);
@@ -524,8 +529,7 @@ void AES_CBC_decrypt_buffer(struct AES_ctx* ctx, uint8_t* buf,  uint32_t length,
   #pragma omp parallel for num_threads(p_count)
   for (i = 16; i < length; i += AES_BLOCKLEN)
   {
-    // uint8_t *ptr = &buf[i];
-    uint8_t *temp_iv = &buf[i-16];
+    uint8_t *temp_iv = &buf_cpy[i-16];
     InvCipher((state_t*)&buf[i], ctx->RoundKey);
     XorWithIv(&buf[i], temp_iv);
   }
@@ -535,6 +539,10 @@ void AES_CFB_decrypt_buffer(struct AES_ctx* ctx, uint8_t* buf,  uint32_t length,
 {
   uintptr_t i;
 
+  //generate fixed copy of buffer to read previous block
+  uint8_t* buf_cpy = malloc(length);
+  memcpy(buf_cpy, buf, length);
+
   //decrypt first 16 bytes of buffer
   Cipher((state_t*)ctx->Iv, ctx->RoundKey);
   XorWithIv(&buf[0], ctx->Iv);
@@ -543,7 +551,7 @@ void AES_CFB_decrypt_buffer(struct AES_ctx* ctx, uint8_t* buf,  uint32_t length,
   #pragma omp parallel for num_threads(p_count)
   for (i = 16; i < length; i += AES_BLOCKLEN)
   {
-    uint8_t *temp_iv = &buf[i-16];
+    uint8_t *temp_iv = &buf_cpy[i-16];
     Cipher((state_t*)&buf[i], ctx->RoundKey);
     XorWithIv(&buf[i], temp_iv);
   }
@@ -555,21 +563,25 @@ void AES_CFB_decrypt_buffer(struct AES_ctx* ctx, uint8_t* buf,  uint32_t length,
 
 #if defined(CTR) && (CTR == 1)
 
-// yes this buffer increment is dodgy, but I'm on a deadline and it'll do for POC
+// yes this buffer increment is dodgy, but I'm on a deadline and it works for files under like ~100gb. 
+
 void AES_CTR_xcrypt_buffer(struct AES_ctx* ctx, uint8_t* buf, uint32_t length, int p_count) {
   
-  #pragma omp parallel for num_threads(p_count) //schedule(dynamic)
+  #pragma omp parallel for num_threads(p_count)
   for (long i=0; i<length; i+=16) {
 
+    //store required values
     uint8_t buffer[AES_BLOCKLEN];
     uint8_t tempIV[AES_BLOCKLEN];
     memcpy(tempIV, ctx->Iv, AES_BLOCKLEN);
+
     //'count' up buffer
     tempIV[12] == (((i/16/16777216) + (tempIV[12]*16*16777216)) % 256);
     tempIV[13] += ((i/16/65536)%256);
     tempIV[14] += ((i/16/256)%256);
     tempIV[15] = (i/16)%256;
     
+    //decrypt
     memcpy(buffer, tempIV, AES_BLOCKLEN);
     Cipher((state_t*)buffer, ctx->RoundKey);
     XorWithIv(&buf[i], buffer);
